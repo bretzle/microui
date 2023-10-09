@@ -18,9 +18,9 @@ pub fn r_get_font_height(_font: FontId) -> usize {
 struct State<'a> {
     label_colors: [LabelColor<'a>; 15],
     bg: [Real; 3],
-    logbuf: FixedString<65536>,
+    logbuf: String,
     logbuf_updated: bool,
-    submit_buf: FixedString<128>,
+    submit_buf: String,
     ctx: microui::Context,
     checks: [bool; 3],
 }
@@ -94,9 +94,9 @@ impl<'a> State<'a> {
                 LabelColor { label: "", idx: ControlColor::Text },
             ],
             bg: [90.0, 95.0, 100.0],
-            logbuf: FixedString::new(),
+            logbuf: String::new(),
             logbuf_updated: false,
-            submit_buf: FixedString::new(),
+            submit_buf: String::new(),
             ctx,
             checks: [false, true, false],
         }
@@ -120,7 +120,7 @@ impl<'a> State<'a> {
 
             self.ctx.set_current_container_rect(&win);
 
-            let mut buff = FixedString::<128>::new();
+            let mut buff = String::new();
 
             if !self.ctx.header_ex("Window Info", WidgetOption::NONE).is_none() {
                 let win_0 = self.ctx.get_current_container_rect();
@@ -128,19 +128,19 @@ impl<'a> State<'a> {
                 self.ctx.label("Position:");
 
                 buff.clear();
-                buff.append_int(10, 0, win_0.x);
-                buff.add_str(", ");
-                buff.append_int(10, 0, win_0.y);
+                append_int10(&mut buff, 0, win_0.x);
+                buff.push_str(", ");
+                append_int10(&mut buff, 0, win_0.y);
 
                 self.ctx.label(buff.as_str());
                 buff.clear();
                 self.ctx.label("Size:");
 
-                buff.append_int(10, 0, win_0.w);
-                buff.add_str(", ");
-                buff.append_int(10, 0, win_0.h);
+                append_int10(&mut buff, 0, win_0.w);
+                buff.push_str(", ");
+                append_int10(&mut buff, 0, win_0.h);
 
-                self.ctx.label(buff.as_str());
+                self.ctx.label(&buff);
             }
             if !self.ctx.header_ex("Test Buttons", WidgetOption::EXPANDED).is_none() {
                 self.ctx.layout_row(&[86, -110, -1], 0);
@@ -235,11 +235,11 @@ impl<'a> State<'a> {
                 self.ctx.layout_end_column();
                 let r: Rect = self.ctx.layout_next();
                 self.ctx.draw_rect(r, color(self.bg[0] as u8, self.bg[1] as u8, self.bg[2] as u8, 255));
-                let mut buff = FixedString::<128>::new();
-                buff.add_str("#");
-                buff.append_int(16, 2, self.bg[0] as _);
-                buff.append_int(16, 2, self.bg[1] as _);
-                buff.append_int(16, 2, self.bg[2] as _);
+                let mut buff = String::new();
+                buff.push_str("#");
+                append_int16(&mut buff, 2, self.bg[0] as _);
+                append_int16(&mut buff, 2, self.bg[1] as _);
+                append_int16(&mut buff, 2, self.bg[2] as _);
                 self.ctx.draw_control_text(buff.as_str(), r, ControlColor::Text, WidgetOption::ALIGN_CENTER);
             }
             self.ctx.end_window();
@@ -271,8 +271,8 @@ impl<'a> State<'a> {
                 submitted = true;
             }
             if submitted {
-                let mut buf = FixedString::<128>::new();
-                buf.add_str(self.submit_buf.as_str());
+                let mut buf = String::new();
+                buf.push_str(self.submit_buf.as_str());
                 self.write_log(buf.as_str());
                 self.submit_buf.clear();
             }
@@ -438,4 +438,12 @@ fn main() {
 
         ::std::thread::sleep(::std::time::Duration::new(0, 1_000_000_000u32 / 60));
     }
+}
+
+fn append_int10(buf: &mut String, leading_zeros: usize, val: i32) {
+    buf.push_str(&format!("{val:0.*}", leading_zeros))
+}
+
+fn append_int16(buf: &mut String, leading_zeros: usize, val: i32) {
+    buf.push_str(&format!("{val:0.*x}", leading_zeros))
 }

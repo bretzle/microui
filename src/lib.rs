@@ -1,67 +1,6 @@
-//
-// Copyright 2022-Present (c) Raja Lehtihet & Wael El Oraiby
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// 1. Redistributions of source code must retain the above copyright notice,
-// this list of conditions and the following disclaimer.
-//
-// 2. Redistributions in binary form must reproduce the above copyright notice,
-// this list of conditions and the following disclaimer in the documentation
-// and/or other materials provided with the distribution.
-//
-// 3. Neither the name of the copyright holder nor the names of its contributors
-// may be used to endorse or promote products derived from this software without
-// specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// -----------------------------------------------------------------------------
-// Ported to rust from https://github.com/rxi/microui/ and the original license
-//
-// Copyright (c) 2020 rxi
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to
-// deal in the Software without restriction, including without limitation the
-// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-// sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
-//
-#![no_std]
-
-extern crate std;
-use std::f32;
-use std::f64;
-
-mod fixed_collections;
-pub use crate::fixed_collections::*;
-
 mod atlas;
-pub use atlas::*;
 
+pub use atlas::*;
 use bitflags::*;
 
 #[derive(Copy, Clone)]
@@ -263,15 +202,15 @@ pub struct Context {
     pub hover_root: Option<usize>,
     pub next_hover_root: Option<usize>,
     pub scroll_target: Option<usize>,
-    pub number_edit_buf: FixedString<127>,
+    pub number_edit_buf: String,
     pub number_edit: Option<Id>,
-    pub command_list: FixedVec<Command, 4096>,
-    pub root_list: FixedVec<usize, 32>,
-    pub container_stack: FixedVec<usize, 32>,
-    pub clip_stack: FixedVec<Rect, 32>,
-    pub id_stack: FixedVec<Id, 32>,
-    pub layout_stack: FixedVec<Layout, 16>,
-    pub text_stack: FixedString<65536>,
+    pub command_list: Vec<Command>,
+    pub root_list: Vec<usize>,
+    pub container_stack: Vec<usize>,
+    pub clip_stack: Vec<Rect>,
+    pub id_stack: Vec<Id>,
+    pub layout_stack: Vec<Layout>,
+    pub text_stack: String,
     pub container_pool: Pool<48>,
     pub containers: [Container; 48],
     pub treenode_pool: Pool<48>,
@@ -283,7 +222,7 @@ pub struct Context {
     pub mouse_pressed: MouseButton,
     pub key_down: KeyMode,
     pub key_pressed: KeyMode,
-    pub input_text: FixedString<32>,
+    pub input_text: String,
 }
 
 impl Default for Context {
@@ -303,15 +242,15 @@ impl Default for Context {
             hover_root: None,
             next_hover_root: None,
             scroll_target: None,
-            number_edit_buf: FixedString::default(),
+            number_edit_buf: String::default(),
             number_edit: None,
-            command_list: FixedVec::default(),
-            root_list: FixedVec::default(),
-            container_stack: FixedVec::default(),
-            clip_stack: FixedVec::default(),
-            id_stack: FixedVec::default(),
-            layout_stack: FixedVec::default(),
-            text_stack: FixedString::default(),
+            command_list: Vec::default(),
+            root_list: Vec::default(),
+            container_stack: Vec::default(),
+            clip_stack: Vec::default(),
+            id_stack: Vec::default(),
+            layout_stack: Vec::default(),
+            text_stack: String::default(),
             container_pool: Pool::default(),
             containers: [Container::default(); 48],
             treenode_pool: Pool::default(),
@@ -323,7 +262,7 @@ impl Default for Context {
             mouse_pressed: MouseButton::NONE,
             key_down: KeyMode::NONE,
             key_pressed: KeyMode::NONE,
-            input_text: FixedString::default(),
+            input_text: String::default(),
         }
     }
 }
@@ -584,7 +523,7 @@ impl Context {
         self.scroll_delta = vec2(0, 0);
         self.last_mouse_pos = self.mouse_pos;
         let n = self.root_list.len();
-        quick_sort_by(self.root_list.as_slice_mut(), |a, b| {
+        self.root_list.sort_by(|a, b| {
             self.containers[*a].zindex.cmp(&self.containers[*b].zindex)
         });
 
@@ -626,7 +565,7 @@ impl Context {
     }
 
     pub fn get_id_u32(&mut self, orig_id: u32) -> Id {
-        let mut res: Id = match self.id_stack.top() {
+        let mut res: Id = match self.id_stack.last() {
             Some(id) => *id,
             None => Id(2166136261),
         };
@@ -636,7 +575,7 @@ impl Context {
     }
 
     pub fn get_id_from_ptr<T: ?Sized>(&mut self, orig_id: &T) -> Id {
-        let mut res: Id = match self.id_stack.top() {
+        let mut res: Id = match self.id_stack.last() {
             Some(id) => *id,
             None => Id(2166136261),
         };
@@ -648,7 +587,7 @@ impl Context {
     }
 
     pub fn get_id_from_str(&mut self, s: &str) -> Id {
-        let mut res: Id = match self.id_stack.top() {
+        let mut res: Id = match self.id_stack.last() {
             Some(id) => *id,
             None => Id(2166136261),
         };
@@ -676,7 +615,7 @@ impl Context {
 
     pub fn pop_clip_rect(&mut self) { self.clip_stack.pop(); }
 
-    pub fn get_clip_rect(&mut self) -> Rect { *self.clip_stack.top().unwrap() }
+    pub fn get_clip_rect(&mut self) -> Rect { *self.clip_stack.last().unwrap() }
 
     pub fn check_clip(&mut self, r: Rect) -> Clip {
         let cr = self.get_clip_rect();
@@ -709,9 +648,9 @@ impl Context {
         self.layout_row(&[0], 0);
     }
 
-    fn get_layout(&self) -> &Layout { return self.layout_stack.top().unwrap(); }
+    fn get_layout(&self) -> &Layout { return self.layout_stack.last().unwrap(); }
 
-    fn get_layout_mut(&mut self) -> &mut Layout { return self.layout_stack.top_mut().unwrap(); }
+    fn get_layout_mut(&mut self) -> &mut Layout { return self.layout_stack.last_mut().unwrap(); }
 
     fn pop_container(&mut self) {
         let cnt = self.get_current_container();
@@ -724,19 +663,19 @@ impl Context {
         self.pop_id();
     }
 
-    pub fn get_current_container(&self) -> usize { *self.container_stack.top().unwrap() }
+    pub fn get_current_container(&self) -> usize { *self.container_stack.last().unwrap() }
 
-    pub fn get_current_container_rect(&self) -> Rect { self.containers[*self.container_stack.top().unwrap()].rect }
+    pub fn get_current_container_rect(&self) -> Rect { self.containers[*self.container_stack.last().unwrap()].rect }
 
-    pub fn set_current_container_rect(&mut self, rect: &Rect) { self.containers[*self.container_stack.top().unwrap()].rect = *rect; }
+    pub fn set_current_container_rect(&mut self, rect: &Rect) { self.containers[*self.container_stack.last().unwrap()].rect = *rect; }
 
-    pub fn get_current_container_scroll(&self) -> Vec2i { self.containers[*self.container_stack.top().unwrap()].scroll }
+    pub fn get_current_container_scroll(&self) -> Vec2i { self.containers[*self.container_stack.last().unwrap()].scroll }
 
-    pub fn set_current_container_scroll(&mut self, scroll: &Vec2i) { self.containers[*self.container_stack.top().unwrap()].scroll = *scroll; }
+    pub fn set_current_container_scroll(&mut self, scroll: &Vec2i) { self.containers[*self.container_stack.last().unwrap()].scroll = *scroll; }
 
-    pub fn get_current_container_content_size(&self) -> Vec2i { self.containers[*self.container_stack.top().unwrap()].content_size }
+    pub fn get_current_container_content_size(&self) -> Vec2i { self.containers[*self.container_stack.last().unwrap()].content_size }
 
-    pub fn get_current_container_body(&self) -> Rect { self.containers[*self.container_stack.top().unwrap()].body }
+    pub fn get_current_container_body(&self) -> Rect { self.containers[*self.container_stack.last().unwrap()].body }
 
     fn get_container_index_intern(&mut self, id: Id, opt: WidgetOption) -> Option<usize> {
         let idx = self.container_pool.get(id);
@@ -795,7 +734,11 @@ impl Context {
 
     pub fn input_text(&mut self, text: &str) { self.input_text += text; }
 
-    pub fn push_command(&mut self, cmd: Command) -> (&mut Command, usize) { self.command_list.push(cmd) }
+    pub fn push_command(&mut self, cmd: Command) -> (&mut Command, usize) {
+        self.command_list.push(cmd);
+        let idx = self.command_list.len() - 1;
+        (&mut self.command_list[idx], idx)
+    }
 
     pub fn push_text(&mut self, str: &str) -> usize {
         let str_start = self.text_stack.len();
@@ -1158,14 +1101,14 @@ impl Context {
         res
     }
 
-    pub fn textbox_raw(&mut self, buf: &mut dyn IString, id: Id, r: Rect, opt: WidgetOption) -> ResourceState {
+    pub fn textbox_raw(&mut self, buf: &mut String, id: Id, r: Rect, opt: WidgetOption) -> ResourceState {
         let mut res = ResourceState::NONE;
         self.update_control(id, r, opt | WidgetOption::HOLD_FOCUS);
         if self.focus == Some(id) {
             let mut len = buf.len();
 
-            if self.input_text.len() > 0 && self.input_text.len() + len < buf.capacity() {
-                buf.add_str(self.input_text.as_str());
+            if self.input_text.len() > 0 {
+                buf.push_str(&self.input_text);
                 len += self.input_text.len();
                 res |= ResourceState::CHANGE
             }
@@ -1203,7 +1146,7 @@ impl Context {
         if self.mouse_pressed.is_left() && self.key_down.is_shift() && self.hover == Some(id) {
             self.number_edit = Some(id);
             self.number_edit_buf.clear();
-            self.number_edit_buf.append_real(precision, *value as f64);
+            self.number_edit_buf.push_str(&format!("{value:.*}", precision));
         }
 
         if self.number_edit == Some(id) {
@@ -1211,12 +1154,13 @@ impl Context {
             let res: ResourceState = self.textbox_raw(&mut temp, id, r, WidgetOption::NONE);
             self.number_edit_buf = temp;
             if res.is_submitted() || self.focus != Some(id) {
-                match parse_decimal(self.number_edit_buf.as_str()) {
+                use std::str::FromStr;
+                match f64::from_str(&self.number_edit_buf) {
                     Ok(v) => {
                         *value = v as Real;
                         self.number_edit = None;
                     }
-                    _ => (),
+                    Err(_) => {}
                 }
                 self.number_edit = None;
             } else {
@@ -1226,7 +1170,7 @@ impl Context {
         ResourceState::NONE
     }
 
-    pub fn textbox_ex(&mut self, buf: &mut dyn IString, opt: WidgetOption) -> ResourceState {
+    pub fn textbox_ex(&mut self, buf: &mut String, opt: WidgetOption) -> ResourceState {
         let id: Id = self.get_id_from_ptr(buf);
         let r: Rect = self.layout_next();
         self.textbox_raw(buf, id, r, opt)
@@ -1264,9 +1208,8 @@ impl Context {
         let x = ((v - low) * (base.w - w) as Real / (high - low)) as i32;
         let thumb = rect(base.x + x, base.y, w, base.h);
         self.draw_control_frame(id, thumb, ControlColor::Button, opt);
-        let mut buff = FixedString::<64>::new();
-        buff.append_real(precision, *value as f64);
-        self.draw_control_text(buff.as_str(), base, ControlColor::Text, opt);
+        let buff = format!("{value:.*}", precision);
+        self.draw_control_text(&buff, base, ControlColor::Text, opt);
         res
     }
 
@@ -1286,9 +1229,8 @@ impl Context {
             res |= ResourceState::CHANGE;
         }
         self.draw_control_frame(id, base, ControlColor::Base, opt);
-        let mut buff = FixedString::<64>::new();
-        buff.append_real(precision, *value as f64);
-        self.draw_control_text(buff.as_str(), base, ControlColor::Text, opt);
+        let buff = format!("{value:.*}", precision);
+        self.draw_control_text(&buff, base, ControlColor::Text, opt);
         res
     }
 
