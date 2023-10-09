@@ -1,7 +1,7 @@
 use std::ops::Mul;
 
 #[repr(C)]
-#[derive(Default, Clone, Copy, Debug)]
+#[derive(Default, Clone, Copy, Debug, Hash)]
 pub struct Color {
     pub r: u8,
     pub g: u8,
