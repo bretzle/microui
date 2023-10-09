@@ -1,7 +1,5 @@
 use microui::*;
-use microui::style::*;
 use microui::atlas::*;
-use microui::math::*;
 use glow::*;
 
 const VERTEX_SHADER: &str = "#version 100
@@ -280,7 +278,7 @@ impl Renderer {
         v3.pos.y = dst.y as f32 + dst.h as f32;
 
         // color
-        v0.color = microui::style::color(color.r, color.g, color.b, color.a);
+        v0.color = Color::rgba(color.r, color.g, color.b, color.a);
         v1.color = v0.color;
         v2.color = v0.color;
         v3.color = v0.color;
@@ -288,11 +286,9 @@ impl Renderer {
         self.push_quad_vertices(gl, &v0, &v1, &v2, &v3);
     }
 
-    pub fn draw_rect(&mut self, gl: &glow::Context, rect: Rect, color: Color) {
-        self.push_rect(gl, rect, ATLAS[ATLAS_WHITE as usize], color);
-    }
+    pub fn draw_rect(&mut self, gl: &glow::Context, rect: Rect, color: Color) { self.push_rect(gl, rect, ATLAS[ATLAS_WHITE as usize], color); }
 
-    pub fn draw_text(&mut self, gl: &glow::Context, text: &str, pos: Vec2i, color: Color) {
+    pub fn draw_text(&mut self, gl: &glow::Context, text: &str, pos: Vec2, color: Color) {
         let mut dst = Rect { x: pos.x, y: pos.y, w: 0, h: 0 };
         for p in text.chars() {
             if (p as usize) < 127 {
@@ -311,14 +307,6 @@ impl Renderer {
         let x = r.x + (r.w - src.w) / 2;
         let y = r.y + (r.h - src.h) / 2;
         self.push_rect(gl, rect(x, y, src.w, src.h), src, color);
-    }
-
-    pub fn get_char_width(&self, _font: FontId, c: char) -> usize {
-        ATLAS[ATLAS_FONT as usize + c as usize].w as usize
-    }
-
-    pub fn get_font_height(&self, _font: FontId) -> usize {
-        18
     }
 
     pub fn set_clip_rect(&mut self, gl: &glow::Context, width: i32, height: i32, rect: Rect) {
