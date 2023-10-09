@@ -6,6 +6,9 @@ use sdl2::keyboard::Keycode;
 use sdl2::video::GLProfile;
 use crate::renderer::Renderer;
 use microui::*;
+use microui::atlas::*;
+use microui::style::*;
+use microui::math::*;
 
 pub fn r_get_char_width(_font: FontId, c: char) -> usize {
     ATLAS[ATLAS_FONT as usize + c as usize].w as usize
@@ -341,7 +344,7 @@ fn main() {
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let (width, height) = window.size();
-    let mut rd = Renderer::new(&gl, &microui::ATLAS_TEXTURE, width, height);
+    let mut rd = Renderer::new(&gl, &ATLAS_TEXTURE, width, height);
 
     let mut state = State::new();
 

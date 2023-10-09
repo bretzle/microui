@@ -1,40 +1,14 @@
-mod atlas;
-
-pub use atlas::*;
 use bitflags::*;
+use crate::pool::Pool;
+use crate::math::*;
+use crate::style::*;
 
-#[derive(Copy, Clone)]
-pub struct Pool<const N: usize> {
-    vec: [PoolItem; N],
-}
+pub mod atlas;
+pub mod math;
+pub mod pool;
+pub mod style;
 
-impl<const N: usize> Pool<N> {
-    pub fn alloc(&mut self, id: Id, frame: usize) -> usize {
-        let mut res = None;
-        let mut latest_update = frame;
-        for i in 0..N {
-            if self.vec[i].last_update < latest_update {
-                latest_update = self.vec[i].last_update;
-                res = Some(i);
-            }
-        }
-
-        assert!(res.is_some());
-        self.vec[res.unwrap()].id = id;
-        self.update(res.unwrap(), frame);
-        res.unwrap()
-    }
-
-    pub fn get(&self, id: Id) -> Option<usize> { (0..N).find(|&i| self.vec[i].id == id) }
-
-    pub fn update(&mut self, idx: usize, frame: usize) { self.vec[idx].last_update = frame; }
-
-    pub fn reset(&mut self, idx: usize) { self.vec[idx] = PoolItem::default(); }
-}
-
-impl<const N: usize> Default for Pool<N> {
-    fn default() -> Self { Self { vec: [PoolItem::default(); N] } }
-}
+const UNCLIPPED_RECT: Rect = Rect { x: 0, y: 0, w: 0x1000000, h: 0x1000000 };
 
 #[derive(PartialEq, Copy, Clone)]
 #[repr(u32)]
@@ -267,18 +241,6 @@ impl Default for Context {
     }
 }
 
-#[derive(Default, Copy, Clone)]
-pub struct Vec2i {
-    pub x: i32,
-    pub y: i32,
-}
-
-#[derive(Default, Copy, Clone)]
-struct PoolItem {
-    pub id: Id,
-    pub last_update: usize,
-}
-
 #[derive(Default, Copy, Clone, Eq, PartialEq)]
 pub struct Id(u32);
 
@@ -292,14 +254,6 @@ pub struct Container {
     pub scroll: Vec2i,
     pub zindex: i32,
     pub open: bool,
-}
-
-#[derive(Default, Copy, Clone)]
-pub struct Rect {
-    pub x: i32,
-    pub y: i32,
-    pub w: i32,
-    pub h: i32,
 }
 
 #[derive(Default, Copy, Clone)]
@@ -345,105 +299,14 @@ pub enum Command {
     None,
 }
 
-#[derive(Default, Copy, Clone)]
-#[repr(C)]
-pub struct Color {
-    pub r: u8,
-    pub g: u8,
-    pub b: u8,
-    pub a: u8,
-}
-
-pub trait Font {
-    fn name(&self) -> &str;
-    fn get_size(&self) -> usize;
-    fn get_char_size(&self, c: char) -> (usize, usize);
-}
-
-#[derive(Copy, Clone)]
-pub struct FontId(pub usize);
-
-#[derive(Copy, Clone)]
-pub struct Style {
-    pub font: FontId,
-    pub size: Vec2i,
-    pub padding: i32,
-    pub spacing: i32,
-    pub indent: i32,
-    pub title_height: i32,
-    pub scrollbar_size: i32,
-    pub thumb_size: i32,
-    pub colors: [Color; 14],
-}
-
-pub type Real = f32;
-
-#[derive(PartialEq, Copy, Clone)]
 #[repr(u32)]
-#[derive(Default)]
+#[derive(PartialEq, Copy, Clone, Default)]
 pub enum LayoutPosition {
     Absolute = 2,
     Relative = 1,
     #[default]
     None = 0,
 }
-
-static UNCLIPPED_RECT: Rect = Rect { x: 0, y: 0, w: 0x1000000, h: 0x1000000 };
-
-impl Default for Style {
-    fn default() -> Self {
-        Self {
-            font: FontId(0),
-            size: Vec2i { x: 68, y: 10 },
-            padding: 5,
-            spacing: 4,
-            indent: 24,
-            title_height: 24,
-            scrollbar_size: 12,
-            thumb_size: 8,
-            colors: [
-                Color { r: 230, g: 230, b: 230, a: 255 },
-                Color { r: 25, g: 25, b: 25, a: 255 },
-                Color { r: 50, g: 50, b: 50, a: 255 },
-                Color { r: 25, g: 25, b: 25, a: 255 },
-                Color { r: 240, g: 240, b: 240, a: 255 },
-                Color { r: 0, g: 0, b: 0, a: 0 },
-                Color { r: 75, g: 75, b: 75, a: 255 },
-                Color { r: 95, g: 95, b: 95, a: 255 },
-                Color { r: 115, g: 115, b: 115, a: 255 },
-                Color { r: 30, g: 30, b: 30, a: 255 },
-                Color { r: 35, g: 35, b: 35, a: 255 },
-                Color { r: 40, g: 40, b: 40, a: 255 },
-                Color { r: 43, g: 43, b: 43, a: 255 },
-                Color { r: 30, g: 30, b: 30, a: 255 },
-            ],
-        }
-    }
-}
-
-pub fn vec2(x: i32, y: i32) -> Vec2i { Vec2i { x, y } }
-
-pub fn rect(x: i32, y: i32, w: i32, h: i32) -> Rect { Rect { x, y, w, h } }
-
-pub fn color(r: u8, g: u8, b: u8, a: u8) -> Color { Color { r, g, b, a } }
-
-pub fn expand_rect(r: Rect, n: i32) -> Rect { rect(r.x - n, r.y - n, r.w + n * 2, r.h + n * 2) }
-
-pub fn intersect_rects(r1: Rect, r2: Rect) -> Rect {
-    let x1 = i32::max(r1.x, r2.x);
-    let y1 = i32::max(r1.y, r2.y);
-    let mut x2 = i32::min(r1.x + r1.w, r2.x + r2.w);
-    let mut y2 = i32::min(r1.y + r1.h, r2.y + r2.h);
-    if x2 < x1 {
-        x2 = x1;
-    }
-    if y2 < y1 {
-        y2 = y1;
-    }
-    rect(x1, y1, x2 - x1, y2 - y1)
-}
-
-pub fn rect_overlaps_vec2(r: Rect, p: Vec2i) -> bool { p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h }
 
 pub fn draw_frame(ctx: &mut Context, rect: Rect, colorid: ControlColor) {
     ctx.draw_rect(rect, ctx.style.colors[colorid as usize]);
@@ -455,7 +318,7 @@ pub fn draw_frame(ctx: &mut Context, rect: Rect, colorid: ControlColor) {
     }
 }
 
-fn hash_step(h: u32, n: u32) -> u32 { (h ^ n).wrapping_mul(16777619_u32) }
+fn hash_step(h: u32, n: u32) -> u32 { (h ^ n).wrapping_mul(16777619) }
 
 fn hash_u32(hash_0: &mut Id, orig_id: u32) {
     let bytes = orig_id.to_be_bytes();
@@ -523,9 +386,7 @@ impl Context {
         self.scroll_delta = vec2(0, 0);
         self.last_mouse_pos = self.mouse_pos;
         let n = self.root_list.len();
-        self.root_list.sort_by(|a, b| {
-            self.containers[*a].zindex.cmp(&self.containers[*b].zindex)
-        });
+        self.root_list.sort_by(|a, b| self.containers[*a].zindex.cmp(&self.containers[*b].zindex));
 
         for i in 0..n {
             if i == 0 {
