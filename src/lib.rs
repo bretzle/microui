@@ -83,31 +83,18 @@ impl<const N: usize> Pool<N> {
         assert!(res.is_some());
         self.vec[res.unwrap()].id = id;
         self.update(res.unwrap(), frame);
-        return res.unwrap();
+        res.unwrap()
     }
 
-    pub fn get(&self, id: Id) -> Option<usize> {
-        for i in 0..N {
-            if self.vec[i].id == id {
-                return Some(i);
-            }
-        }
-        None
-    }
+    pub fn get(&self, id: Id) -> Option<usize> { (0..N).find(|&i| self.vec[i].id == id) }
 
-    pub fn update(&mut self, idx: usize, frame: usize) {
-        self.vec[idx].last_update = frame;
-    }
+    pub fn update(&mut self, idx: usize, frame: usize) { self.vec[idx].last_update = frame; }
 
-    pub fn reset(&mut self, idx: usize) {
-        self.vec[idx] = PoolItem::default();
-    }
+    pub fn reset(&mut self, idx: usize) { self.vec[idx] = PoolItem::default(); }
 }
 
 impl<const N: usize> Default for Pool<N> {
-    fn default() -> Self {
-        Self { vec: [PoolItem::default(); N] }
-    }
+    fn default() -> Self { Self { vec: [PoolItem::default(); N] } }
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -179,22 +166,15 @@ bitflags! {
 }
 
 impl ResourceState {
-    pub fn is_changed(&self) -> bool {
-        self.intersects(Self::CHANGE)
-    }
-    pub fn is_submitted(&self) -> bool {
-        self.intersects(Self::SUBMIT)
-    }
-    pub fn is_active(&self) -> bool {
-        self.intersects(Self::ACTIVE)
-    }
-    pub fn is_none(&self) -> bool {
-        self.bits == 0
-    }
+    pub fn is_changed(&self) -> bool { self.intersects(Self::CHANGE) }
+    pub fn is_submitted(&self) -> bool { self.intersects(Self::SUBMIT) }
+    pub fn is_active(&self) -> bool { self.intersects(Self::ACTIVE) }
+    pub fn is_none(&self) -> bool { self.bits() == 0 }
 }
 
 bitflags! {
-    pub struct WidgetOption : u32 {
+    #[derive(Clone, Copy)]
+    pub struct WidgetOption: u32 {
         const EXPANDED = 4096;
         const CLOSED = 2048;
         const POPUP= 1024;
@@ -213,51 +193,24 @@ bitflags! {
 }
 
 impl WidgetOption {
-    pub fn is_expanded(&self) -> bool {
-        self.intersects(WidgetOption::EXPANDED)
-    }
-    pub fn is_closed(&self) -> bool {
-        self.intersects(WidgetOption::CLOSED)
-    }
-    pub fn is_popup(&self) -> bool {
-        self.intersects(WidgetOption::POPUP)
-    }
-    pub fn is_auto_sizing(&self) -> bool {
-        self.intersects(WidgetOption::AUTO_SIZE)
-    }
-    pub fn is_holding_focus(&self) -> bool {
-        self.intersects(WidgetOption::HOLD_FOCUS)
-    }
-    pub fn has_no_title(&self) -> bool {
-        self.intersects(WidgetOption::NO_TITLE)
-    }
-    pub fn has_no_close(&self) -> bool {
-        self.intersects(WidgetOption::NO_CLOSE)
-    }
-    pub fn has_no_scroll(&self) -> bool {
-        self.intersects(WidgetOption::NO_SCROLL)
-    }
-    pub fn is_fixed(&self) -> bool {
-        self.intersects(WidgetOption::NO_RESIZE)
-    }
-    pub fn has_no_frame(&self) -> bool {
-        self.intersects(WidgetOption::NO_FRAME)
-    }
-    pub fn is_not_interactive(&self) -> bool {
-        self.intersects(WidgetOption::NO_INTERACT)
-    }
-    pub fn is_aligned_right(&self) -> bool {
-        self.intersects(WidgetOption::ALIGN_RIGHT)
-    }
-    pub fn is_aligned_center(&self) -> bool {
-        self.intersects(WidgetOption::ALIGN_CENTER)
-    }
-    pub fn is_none(&self) -> bool {
-        self.bits == 0
-    }
+    pub fn is_expanded(&self) -> bool { self.intersects(WidgetOption::EXPANDED) }
+    pub fn is_closed(&self) -> bool { self.intersects(WidgetOption::CLOSED) }
+    pub fn is_popup(&self) -> bool { self.intersects(WidgetOption::POPUP) }
+    pub fn is_auto_sizing(&self) -> bool { self.intersects(WidgetOption::AUTO_SIZE) }
+    pub fn is_holding_focus(&self) -> bool { self.intersects(WidgetOption::HOLD_FOCUS) }
+    pub fn has_no_title(&self) -> bool { self.intersects(WidgetOption::NO_TITLE) }
+    pub fn has_no_close(&self) -> bool { self.intersects(WidgetOption::NO_CLOSE) }
+    pub fn has_no_scroll(&self) -> bool { self.intersects(WidgetOption::NO_SCROLL) }
+    pub fn is_fixed(&self) -> bool { self.intersects(WidgetOption::NO_RESIZE) }
+    pub fn has_no_frame(&self) -> bool { self.intersects(WidgetOption::NO_FRAME) }
+    pub fn is_not_interactive(&self) -> bool { self.intersects(WidgetOption::NO_INTERACT) }
+    pub fn is_aligned_right(&self) -> bool { self.intersects(WidgetOption::ALIGN_RIGHT) }
+    pub fn is_aligned_center(&self) -> bool { self.intersects(WidgetOption::ALIGN_CENTER) }
+    pub fn is_none(&self) -> bool { self.bits() == 0 }
 }
 
 bitflags! {
+    #[derive(Clone, Copy)]
     pub struct MouseButton : u32 {
         const MIDDLE = 4;
         const RIGHT = 2;
@@ -267,21 +220,14 @@ bitflags! {
 }
 
 impl MouseButton {
-    pub fn is_middle(&self) -> bool {
-        self.intersects(Self::MIDDLE)
-    }
-    pub fn is_right(&self) -> bool {
-        self.intersects(Self::RIGHT)
-    }
-    pub fn is_left(&self) -> bool {
-        self.intersects(Self::LEFT)
-    }
-    pub fn is_none(&self) -> bool {
-        self.bits == 0
-    }
+    pub fn is_middle(&self) -> bool { self.intersects(Self::MIDDLE) }
+    pub fn is_right(&self) -> bool { self.intersects(Self::RIGHT) }
+    pub fn is_left(&self) -> bool { self.intersects(Self::LEFT) }
+    pub fn is_none(&self) -> bool { self.bits() == 0 }
 }
 
 bitflags! {
+    #[derive(Clone, Copy)]
     pub struct KeyMode : u32 {
         const RETURN = 16;
         const BACKSPACE = 8;
@@ -293,24 +239,12 @@ bitflags! {
 }
 
 impl KeyMode {
-    pub fn is_none(&self) -> bool {
-        self.bits == 0
-    }
-    pub fn is_return(&self) -> bool {
-        self.intersects(Self::RETURN)
-    }
-    pub fn is_backspace(&self) -> bool {
-        self.intersects(Self::BACKSPACE)
-    }
-    pub fn is_alt(&self) -> bool {
-        self.intersects(Self::ALT)
-    }
-    pub fn is_ctrl(&self) -> bool {
-        self.intersects(Self::CTRL)
-    }
-    pub fn is_shift(&self) -> bool {
-        self.intersects(Self::SHIFT)
-    }
+    pub fn is_none(&self) -> bool { self.bits() == 0 }
+    pub fn is_return(&self) -> bool { self.intersects(Self::RETURN) }
+    pub fn is_backspace(&self) -> bool { self.intersects(Self::BACKSPACE) }
+    pub fn is_alt(&self) -> bool { self.intersects(Self::ALT) }
+    pub fn is_ctrl(&self) -> bool { self.intersects(Self::CTRL) }
+    pub fn is_shift(&self) -> bool { self.intersects(Self::SHIFT) }
 }
 
 #[repr(C)]
@@ -444,7 +378,7 @@ pub struct Layout {
     pub indent: i32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Default)]
 pub enum Command {
     Jump {
         dst_idx: Option<usize>,
@@ -468,13 +402,8 @@ pub enum Command {
         id: Icon,
         color: Color,
     },
+    #[default]
     None,
-}
-
-impl Default for Command {
-    fn default() -> Self {
-        Command::None
-    }
 }
 
 #[derive(Default, Copy, Clone)]
@@ -512,16 +441,12 @@ pub type Real = f32;
 
 #[derive(PartialEq, Copy, Clone)]
 #[repr(u32)]
+#[derive(Default)]
 pub enum LayoutPosition {
     Absolute = 2,
     Relative = 1,
+    #[default]
     None = 0,
-}
-
-impl Default for LayoutPosition {
-    fn default() -> Self {
-        LayoutPosition::None
-    }
 }
 
 static UNCLIPPED_RECT: Rect = Rect { x: 0, y: 0, w: 0x1000000, h: 0x1000000 };
@@ -557,21 +482,13 @@ impl Default for Style {
     }
 }
 
-pub fn vec2(x: i32, y: i32) -> Vec2i {
-    Vec2i { x, y }
-}
+pub fn vec2(x: i32, y: i32) -> Vec2i { Vec2i { x, y } }
 
-pub fn rect(x: i32, y: i32, w: i32, h: i32) -> Rect {
-    Rect { x, y, w, h }
-}
+pub fn rect(x: i32, y: i32, w: i32, h: i32) -> Rect { Rect { x, y, w, h } }
 
-pub fn color(r: u8, g: u8, b: u8, a: u8) -> Color {
-    Color { r, g, b, a }
-}
+pub fn color(r: u8, g: u8, b: u8, a: u8) -> Color { Color { r, g, b, a } }
 
-pub fn expand_rect(r: Rect, n: i32) -> Rect {
-    rect(r.x - n, r.y - n, r.w + n * 2, r.h + n * 2)
-}
+pub fn expand_rect(r: Rect, n: i32) -> Rect { rect(r.x - n, r.y - n, r.w + n * 2, r.h + n * 2) }
 
 pub fn intersect_rects(r1: Rect, r2: Rect) -> Rect {
     let x1 = i32::max(r1.x, r2.x);
@@ -584,12 +501,10 @@ pub fn intersect_rects(r1: Rect, r2: Rect) -> Rect {
     if y2 < y1 {
         y2 = y1;
     }
-    return rect(x1, y1, x2 - x1, y2 - y1);
+    rect(x1, y1, x2 - x1, y2 - y1)
 }
 
-pub fn rect_overlaps_vec2(r: Rect, p: Vec2i) -> bool {
-    p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h
-}
+pub fn rect_overlaps_vec2(r: Rect, p: Vec2i) -> bool { p.x >= r.x && p.x < r.x + r.w && p.y >= r.y && p.y < r.y + r.h }
 
 pub fn draw_frame(ctx: &mut Context, rect: Rect, colorid: ControlColor) {
     ctx.draw_rect(rect, ctx.style.colors[colorid as usize]);
@@ -601,9 +516,7 @@ pub fn draw_frame(ctx: &mut Context, rect: Rect, colorid: ControlColor) {
     }
 }
 
-fn hash_step(h: u32, n: u32) -> u32 {
-    (h ^ n).wrapping_mul(16777619 as u32)
-}
+fn hash_step(h: u32, n: u32) -> u32 { (h ^ n).wrapping_mul(16777619_u32) }
 
 fn hash_u32(hash_0: &mut Id, orig_id: u32) {
     let bytes = orig_id.to_be_bytes();
@@ -650,7 +563,7 @@ impl Context {
         assert_eq!(self.clip_stack.len(), 0);
         assert_eq!(self.id_stack.len(), 0);
         assert_eq!(self.layout_stack.len(), 0);
-        if !self.scroll_target.is_none() {
+        if self.scroll_target.is_some() {
             self.containers[self.scroll_target.unwrap()].scroll.x += self.scroll_delta.x;
             self.containers[self.scroll_target.unwrap()].scroll.y += self.scroll_delta.y;
         }
@@ -659,7 +572,7 @@ impl Context {
         }
         self.updated_focus = false;
         if !self.mouse_pressed.is_none()
-            && !self.next_hover_root.is_none()
+            && self.next_hover_root.is_some()
             && self.containers[self.next_hover_root.unwrap()].zindex < self.last_zindex
             && self.containers[self.next_hover_root.unwrap()].zindex >= 0
         {
@@ -686,22 +599,22 @@ impl Context {
                     Command::Jump { .. } => true,
                     _ => false,
                 });
-                let dst_idx = self.containers[self.root_list[i as usize]].head_idx.unwrap() + 1;
+                let dst_idx = self.containers[self.root_list[i]].head_idx.unwrap() + 1;
                 *cmd = Command::Jump { dst_idx: Some(dst_idx) };
                 assert!(dst_idx < self.command_list.len());
             } else {
                 let prev = &self.containers[self.root_list[i - 1]];
                 self.command_list[prev.tail_idx.unwrap()] = Command::Jump {
-                    dst_idx: Some(self.containers[self.root_list[i as usize]].head_idx.unwrap() + 1),
+                    dst_idx: Some(self.containers[self.root_list[i]].head_idx.unwrap() + 1),
                 };
             }
             if i == n - 1 {
-                assert!(self.containers[self.root_list[i as usize]].tail_idx.unwrap() < self.command_list.len());
-                assert!(match self.command_list[self.containers[self.root_list[i as usize]].tail_idx.unwrap()] {
+                assert!(self.containers[self.root_list[i]].tail_idx.unwrap() < self.command_list.len());
+                assert!(match self.command_list[self.containers[self.root_list[i]].tail_idx.unwrap()] {
                     Command::Jump { .. } => true,
                     _ => false,
                 });
-                self.command_list[self.containers[self.root_list[i as usize]].tail_idx.unwrap()] = Command::Jump { dst_idx: Some(self.command_list.len()) };
+                self.command_list[self.containers[self.root_list[i]].tail_idx.unwrap()] = Command::Jump { dst_idx: Some(self.command_list.len()) };
                 // the snake eats its tail
             }
         }
@@ -719,7 +632,7 @@ impl Context {
         };
         hash_u32(&mut res, orig_id);
         self.last_id = Some(res);
-        return res;
+        res
     }
 
     pub fn get_id_from_ptr<T: ?Sized>(&mut self, orig_id: &T) -> Id {
@@ -731,7 +644,7 @@ impl Context {
         let bytes = ptr.to_le_bytes();
         hash_bytes(&mut res, &bytes);
         self.last_id = Some(res);
-        return res;
+        res
     }
 
     pub fn get_id_from_str(&mut self, s: &str) -> Id {
@@ -741,7 +654,7 @@ impl Context {
         };
         hash_str(&mut res, s);
         self.last_id = Some(res);
-        return res;
+        res
     }
 
     pub fn push_id_from_ptr<T>(&mut self, orig_id: &T) {
@@ -754,22 +667,16 @@ impl Context {
         self.id_stack.push(id);
     }
 
-    pub fn pop_id(&mut self) {
-        self.id_stack.pop();
-    }
+    pub fn pop_id(&mut self) { self.id_stack.pop(); }
 
     pub fn push_clip_rect(&mut self, rect: Rect) {
         let last = self.get_clip_rect();
         self.clip_stack.push(intersect_rects(rect, last));
     }
 
-    pub fn pop_clip_rect(&mut self) {
-        self.clip_stack.pop();
-    }
+    pub fn pop_clip_rect(&mut self) { self.clip_stack.pop(); }
 
-    pub fn get_clip_rect(&mut self) -> Rect {
-        *self.clip_stack.top().unwrap()
-    }
+    pub fn get_clip_rect(&mut self) -> Rect { *self.clip_stack.top().unwrap() }
 
     pub fn check_clip(&mut self, r: Rect) -> Clip {
         let cr = self.get_clip_rect();
@@ -779,7 +686,7 @@ impl Context {
         if r.x >= cr.x && r.x + r.w <= cr.x + cr.w && r.y >= cr.y && r.y + r.h <= cr.y + cr.h {
             return Clip::None;
         }
-        return Clip::Part;
+        Clip::Part
     }
 
     fn push_layout(&mut self, body: Rect, scroll: Vec2i) {
@@ -802,13 +709,9 @@ impl Context {
         self.layout_row(&[0], 0);
     }
 
-    fn get_layout(&self) -> &Layout {
-        return self.layout_stack.top().unwrap();
-    }
+    fn get_layout(&self) -> &Layout { return self.layout_stack.top().unwrap(); }
 
-    fn get_layout_mut(&mut self) -> &mut Layout {
-        return self.layout_stack.top_mut().unwrap();
-    }
+    fn get_layout_mut(&mut self) -> &mut Layout { return self.layout_stack.top_mut().unwrap(); }
 
     fn pop_container(&mut self) {
         let cnt = self.get_current_container();
@@ -821,33 +724,19 @@ impl Context {
         self.pop_id();
     }
 
-    pub fn get_current_container(&self) -> usize {
-        *self.container_stack.top().unwrap()
-    }
+    pub fn get_current_container(&self) -> usize { *self.container_stack.top().unwrap() }
 
-    pub fn get_current_container_rect(&self) -> Rect {
-        self.containers[*self.container_stack.top().unwrap()].rect
-    }
+    pub fn get_current_container_rect(&self) -> Rect { self.containers[*self.container_stack.top().unwrap()].rect }
 
-    pub fn set_current_container_rect(&mut self, rect: &Rect) {
-        self.containers[*self.container_stack.top().unwrap()].rect = *rect;
-    }
+    pub fn set_current_container_rect(&mut self, rect: &Rect) { self.containers[*self.container_stack.top().unwrap()].rect = *rect; }
 
-    pub fn get_current_container_scroll(&self) -> Vec2i {
-        self.containers[*self.container_stack.top().unwrap()].scroll
-    }
+    pub fn get_current_container_scroll(&self) -> Vec2i { self.containers[*self.container_stack.top().unwrap()].scroll }
 
-    pub fn set_current_container_scroll(&mut self, scroll: &Vec2i) {
-        self.containers[*self.container_stack.top().unwrap()].scroll = *scroll;
-    }
+    pub fn set_current_container_scroll(&mut self, scroll: &Vec2i) { self.containers[*self.container_stack.top().unwrap()].scroll = *scroll; }
 
-    pub fn get_current_container_content_size(&self) -> Vec2i {
-        self.containers[*self.container_stack.top().unwrap()].content_size
-    }
+    pub fn get_current_container_content_size(&self) -> Vec2i { self.containers[*self.container_stack.top().unwrap()].content_size }
 
-    pub fn get_current_container_body(&self) -> Rect {
-        self.containers[*self.container_stack.top().unwrap()].body
-    }
+    pub fn get_current_container_body(&self) -> Rect { self.containers[*self.container_stack.top().unwrap()].body }
 
     fn get_container_index_intern(&mut self, id: Id, opt: WidgetOption) -> Option<usize> {
         let idx = self.container_pool.get(id);
@@ -879,9 +768,7 @@ impl Context {
         self.containers[cnt].zindex = self.last_zindex;
     }
 
-    pub fn input_mousemove(&mut self, x: i32, y: i32) {
-        self.mouse_pos = vec2(x, y);
-    }
+    pub fn input_mousemove(&mut self, x: i32, y: i32) { self.mouse_pos = vec2(x, y); }
 
     pub fn input_mousedown(&mut self, x: i32, y: i32, btn: MouseButton) {
         self.input_mousemove(x, y);
@@ -904,24 +791,18 @@ impl Context {
         self.key_down |= key;
     }
 
-    pub fn input_keyup(&mut self, key: KeyMode) {
-        self.key_down &= !key;
-    }
+    pub fn input_keyup(&mut self, key: KeyMode) { self.key_down &= !key; }
 
-    pub fn input_text(&mut self, text: &str) {
-        self.input_text += text;
-    }
+    pub fn input_text(&mut self, text: &str) { self.input_text += text; }
 
-    pub fn push_command(&mut self, cmd: Command) -> (&mut Command, usize) {
-        self.command_list.push(cmd)
-    }
+    pub fn push_command(&mut self, cmd: Command) -> (&mut Command, usize) { self.command_list.push(cmd) }
 
     pub fn push_text(&mut self, str: &str) -> usize {
         let str_start = self.text_stack.len();
         for c in str.chars() {
             self.text_stack.push(c);
         }
-        return str_start;
+        str_start
     }
 
     ///
@@ -946,9 +827,7 @@ impl Context {
         pos
     }
 
-    pub fn set_clip(&mut self, rect: Rect) {
-        self.push_command(Command::Clip { rect });
-    }
+    pub fn set_clip(&mut self, rect: Rect) { self.push_command(Command::Clip { rect }); }
 
     pub fn draw_rect(&mut self, mut rect: Rect, color: Color) {
         rect = intersect_rects(rect, self.get_clip_rect());
@@ -1011,7 +890,7 @@ impl Context {
     }
 
     pub fn layout_end_column(&mut self) {
-        let b = self.get_layout().clone();
+        let b = *self.get_layout();
         self.layout_stack.pop();
 
         let a = self.get_layout_mut();
@@ -1045,13 +924,9 @@ impl Context {
         Self::layout_row_for_layout(layout, widths, height);
     }
 
-    pub fn layout_width(&mut self, width: i32) {
-        self.get_layout_mut().size.x = width;
-    }
+    pub fn layout_width(&mut self, width: i32) { self.get_layout_mut().size.x = width; }
 
-    pub fn layout_height(&mut self, height: i32) {
-        self.get_layout_mut().size.y = height;
-    }
+    pub fn layout_height(&mut self, height: i32) { self.get_layout_mut().size.y = height; }
 
     pub fn layout_set_next(&mut self, r: Rect, position: LayoutPosition) {
         let layout = self.get_layout_mut();
@@ -1075,17 +950,13 @@ impl Context {
             let litems = layout.items;
             let lsize_y = layout.size.y;
             let mut undefined_widths = [0; 16];
-            undefined_widths[0..litems as usize].copy_from_slice(&layout.widths[0..litems as usize]);
+            undefined_widths[0..litems].copy_from_slice(&layout.widths[0..litems]);
             if layout.item_index == layout.items {
-                Self::layout_row_for_layout(layout, &undefined_widths[0..litems as usize], lsize_y);
+                Self::layout_row_for_layout(layout, &undefined_widths[0..litems], lsize_y);
             }
             res.x = layout.position.x;
             res.y = layout.position.y;
-            res.w = if layout.items > 0 {
-                layout.widths[layout.item_index as usize]
-            } else {
-                layout.size.x
-            };
+            res.w = if layout.items > 0 { layout.widths[layout.item_index] } else { layout.size.x };
             res.h = layout.size.y;
             if res.w == 0 {
                 res.w = style.size.x + style.padding * 2;
@@ -1112,7 +983,7 @@ impl Context {
         layout.max.x = if layout.max.x > res.x + res.w { layout.max.x } else { res.x + res.w };
         layout.max.y = if layout.max.y > res.y + res.h { layout.max.y } else { res.y + res.h };
         self.last_rect = res;
-        return self.last_rect;
+        self.last_rect
     }
 
     fn in_hover_root(&mut self) -> bool {
@@ -1248,7 +1119,7 @@ impl Context {
 
     pub fn button_ex(&mut self, label: &str, icon: Icon, opt: WidgetOption) -> ResourceState {
         let mut res = ResourceState::NONE;
-        let id: Id = if label.len() > 0 {
+        let id: Id = if !label.is_empty() {
             self.get_id_from_str(label)
         } else {
             self.get_id_u32(icon as u32)
@@ -1259,13 +1130,13 @@ impl Context {
             res |= ResourceState::SUBMIT;
         }
         self.draw_control_frame(id, r, ControlColor::Button, opt);
-        if label.len() > 0 {
+        if !label.is_empty() {
             self.draw_control_text(label, r, ControlColor::Text, opt);
         }
         if icon != Icon::None {
             self.draw_icon(icon, r, self.style.colors[ControlColor::Text as usize]);
         }
-        return res;
+        res
     }
 
     pub fn checkbox(&mut self, label: &str, state: &mut bool) -> ResourceState {
@@ -1276,7 +1147,7 @@ impl Context {
         self.update_control(id, r, WidgetOption::NONE);
         if self.mouse_pressed.is_left() && self.focus == Some(id) {
             res |= ResourceState::CHANGE;
-            *state = *state == false;
+            *state = !(*state);
         }
         self.draw_control_frame(id, box_0, ControlColor::Base, WidgetOption::NONE);
         if *state {
@@ -1284,7 +1155,7 @@ impl Context {
         }
         r = rect(r.x + box_0.w, r.y, r.w - box_0.w, r.h);
         self.draw_control_text(label, r, ControlColor::Text, WidgetOption::NONE);
-        return res;
+        res
     }
 
     pub fn textbox_raw(&mut self, buf: &mut dyn IString, id: Id, r: Rect, opt: WidgetOption) -> ResourceState {
@@ -1295,7 +1166,7 @@ impl Context {
 
             if self.input_text.len() > 0 && self.input_text.len() + len < buf.capacity() {
                 buf.add_str(self.input_text.as_str());
-                len += self.input_text.len() as usize;
+                len += self.input_text.len();
                 res |= ResourceState::CHANGE
             }
 
@@ -1325,7 +1196,7 @@ impl Context {
         } else {
             self.draw_control_text(buf.as_str(), r, ControlColor::Text, opt);
         }
-        return res;
+        res
     }
 
     fn number_textbox(&mut self, precision: usize, value: &mut Real, r: Rect, id: Id) -> ResourceState {
@@ -1352,13 +1223,13 @@ impl Context {
                 return ResourceState::ACTIVE;
             }
         }
-        return ResourceState::NONE;
+        ResourceState::NONE
     }
 
     pub fn textbox_ex(&mut self, buf: &mut dyn IString, opt: WidgetOption) -> ResourceState {
         let id: Id = self.get_id_from_ptr(buf);
         let r: Rect = self.layout_next();
-        return self.textbox_raw(buf, id, r, opt);
+        self.textbox_raw(buf, id, r, opt)
     }
 
     pub fn slider_ex(&mut self, value: &mut Real, low: Real, high: Real, step: Real, precision: usize, opt: WidgetOption) -> ResourceState {
@@ -1396,7 +1267,7 @@ impl Context {
         let mut buff = FixedString::<64>::new();
         buff.append_real(precision, *value as f64);
         self.draw_control_text(buff.as_str(), base, ControlColor::Text, opt);
-        return res;
+        res
     }
 
     pub fn number_ex(&mut self, value: &mut Real, step: Real, precision: usize, opt: WidgetOption) -> ResourceState {
@@ -1418,7 +1289,7 @@ impl Context {
         let mut buff = FixedString::<64>::new();
         buff.append_real(precision, *value as f64);
         self.draw_control_text(buff.as_str(), base, ControlColor::Text, opt);
-        return res;
+        res
     }
 
     fn header(&mut self, label: &str, is_treenode: bool, opt: WidgetOption) -> ResourceState {
@@ -1455,12 +1326,14 @@ impl Context {
         r.x += r.h - self.style.padding;
         r.w -= r.h - self.style.padding;
         self.draw_control_text(label, r, ControlColor::Text, WidgetOption::NONE);
-        return if expanded != 0 { ResourceState::ACTIVE } else { ResourceState::NONE };
+        if expanded != 0 {
+            ResourceState::ACTIVE
+        } else {
+            ResourceState::NONE
+        }
     }
 
-    pub fn header_ex(&mut self, label: &str, opt: WidgetOption) -> ResourceState {
-        return self.header(label, false, opt);
-    }
+    pub fn header_ex(&mut self, label: &str, opt: WidgetOption) -> ResourceState { self.header(label, false, opt) }
 
     pub fn begin_treenode_ex(&mut self, label: &str, opt: WidgetOption) -> ResourceState {
         let res = self.header(label, true, opt);
@@ -1468,7 +1341,7 @@ impl Context {
             self.get_layout_mut().indent += self.style.indent;
             self.id_stack.push(self.last_id.unwrap());
         }
-        return res;
+        res
     }
 
     pub fn end_treenode(&mut self) {
@@ -1476,16 +1349,14 @@ impl Context {
         self.pop_id();
     }
 
-    fn clamp(x: i32, a: i32, b: i32) -> i32 {
-        i32::min(b, i32::max(a, x))
-    }
+    fn clamp(x: i32, a: i32, b: i32) -> i32 { i32::min(b, i32::max(a, x)) }
 
     fn scrollbars(&mut self, cnt_id: usize, body: &mut Rect) {
         let sz = self.style.scrollbar_size;
         let mut cs: Vec2i = self.containers[cnt_id].content_size;
         cs.x += self.style.padding * 2;
         cs.y += self.style.padding * 2;
-        self.push_clip_rect(body.clone());
+        self.push_clip_rect(*body);
         if cs.y > self.containers[cnt_id].body.h {
             body.w -= sz;
         }
@@ -1654,7 +1525,7 @@ impl Context {
             self.containers[cnt_id.unwrap()].open = false;
         }
         self.push_clip_rect(self.containers[cnt_id.unwrap()].body);
-        return ResourceState::ACTIVE;
+        ResourceState::ACTIVE
     }
 
     pub fn end_window(&mut self) {
@@ -1674,12 +1545,10 @@ impl Context {
     pub fn begin_popup(&mut self, name: &str) -> ResourceState {
         let opt =
             WidgetOption::POPUP | WidgetOption::AUTO_SIZE | WidgetOption::NO_RESIZE | WidgetOption::NO_SCROLL | WidgetOption::NO_TITLE | WidgetOption::CLOSED;
-        return self.begin_window_ex(name, rect(0, 0, 0, 0), opt);
+        self.begin_window_ex(name, rect(0, 0, 0, 0), opt)
     }
 
-    pub fn end_popup(&mut self) {
-        self.end_window();
-    }
+    pub fn end_popup(&mut self) { self.end_window(); }
 
     pub fn begin_panel_ex(&mut self, name: &str, opt: WidgetOption) {
         self.push_id_from_str(name);

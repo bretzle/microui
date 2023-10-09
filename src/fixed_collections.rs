@@ -51,7 +51,7 @@ pub trait IVec<T: Default + Copy> {
 
     fn append(&mut self, other: &[T]) {
         for e in other {
-            self.push(e.clone());
+            self.push(*e);
         }
     }
 
@@ -94,7 +94,7 @@ fn partition<T, F: Fn(&T, &T) -> Ordering>(arr: &mut [T], low: isize, high: isiz
             arr.swap(store_index as usize, last_index as usize);
         }
     }
-    arr.swap(store_index as usize, pivot as usize);
+    arr.swap(store_index as usize, pivot);
     store_index
 }
 
@@ -134,12 +134,8 @@ impl<T: Default + Copy, const N: usize> IVec<T> for FixedVec<T, N> {
         }
     }
 
-    fn capacity(&self) -> usize {
-        N
-    }
-    fn len(&self) -> usize {
-        self.idx
-    }
+    fn capacity(&self) -> usize { N }
+    fn len(&self) -> usize { self.idx }
     fn clear(&mut self) {
         for i in 0..self.idx {
             self.items[i] = T::default();
@@ -147,66 +143,50 @@ impl<T: Default + Copy, const N: usize> IVec<T> for FixedVec<T, N> {
         self.idx = 0;
     }
 
-    fn as_slice(&self) -> &[T] {
-        &self.items[0..self.idx]
-    }
+    fn as_slice(&self) -> &[T] { &self.items[0..self.idx] }
 
-    fn as_slice_mut(&mut self) -> &mut [T] {
-        &mut self.items[0..self.idx]
-    }
+    fn as_slice_mut(&mut self) -> &mut [T] { &mut self.items[0..self.idx] }
 
     fn get(&self, index: usize) -> &T {
-        assert!((index as usize) < self.idx);
-        assert!((index as usize) < N);
-        &self.items[index as usize]
+        assert!(index < self.idx);
+        assert!(index < N);
+        &self.items[index]
     }
 
     fn get_mut(&mut self, index: usize) -> &mut T {
-        assert!((index as usize) < self.idx);
-        assert!((index as usize) < N);
-        &mut self.items[index as usize]
+        assert!(index < self.idx);
+        assert!(index < N);
+        &mut self.items[index]
     }
 
     fn reverse(&mut self) {
         let len = self.len();
         for i in 0..len / 2 {
-            let tmp = self.items[i];
-            self.items[i] = self.items[len - 1 - i];
-            self.items[len - 1 - i] = tmp;
+            self.items.swap(i, len - 1 - i);
         }
     }
 }
 
 impl<T: Default + Copy, const N: usize> Index<usize> for FixedVec<T, N> {
     type Output = T;
-    fn index(&self, index: usize) -> &Self::Output {
-        self.get(index as usize)
-    }
+    fn index(&self, index: usize) -> &Self::Output { self.get(index) }
 }
 
 impl<T: Default + Copy, const N: usize> IndexMut<usize> for FixedVec<T, N> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        self.get_mut(index as usize)
-    }
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output { self.get_mut(index) }
 }
 
 impl<T: Default + Copy, const N: usize> Default for FixedVec<T, N> {
-    fn default() -> Self {
-        Self { idx: 0, items: [T::default(); N] }
-    }
+    fn default() -> Self { Self { idx: 0, items: [T::default(); N] } }
 }
 
 impl<T: Default + Copy> Index<usize> for dyn IVec<T> {
     type Output = T;
-    fn index(&self, index: usize) -> &Self::Output {
-        self.get(index as usize)
-    }
+    fn index(&self, index: usize) -> &Self::Output { self.get(index) }
 }
 
 impl<T: Default + Copy> IndexMut<usize> for dyn IVec<T> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        self.get_mut(index as usize)
-    }
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output { self.get_mut(index) }
 }
 
 impl<const N: usize> core::fmt::Write for FixedVec<char, N> {
@@ -223,8 +203,8 @@ impl<const N: usize> core::fmt::Write for FixedVec<char, N> {
 }
 
 const DIGITS: [char; 32] = [
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
-    'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V',
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U',
+    'V',
 ];
 
 pub trait IString {
@@ -328,9 +308,7 @@ pub struct FixedString<const N: usize> {
 }
 
 impl<const N: usize> FixedString<N> {
-    pub fn new() -> Self {
-        Self { char_count: 0, vec: FixedVec::default() }
-    }
+    pub fn new() -> Self { Self { char_count: 0, vec: FixedVec::default() } }
 }
 
 impl<const N: usize> IString for FixedString<N> {
@@ -344,7 +322,7 @@ impl<const N: usize> IString for FixedString<N> {
     }
 
     fn pop(&mut self) {
-        let ch = self.chars().rev().next().unwrap();
+        let ch = self.chars().next_back().unwrap();
 
         let bc = ch.len_utf8();
         for _ in 0..bc {
@@ -353,34 +331,22 @@ impl<const N: usize> IString for FixedString<N> {
         self.char_count -= 1;
     }
 
-    fn as_str(&self) -> &str {
-        unsafe { core::str::from_utf8_unchecked(self.vec.as_slice()) }
-    }
+    fn as_str(&self) -> &str { unsafe { core::str::from_utf8_unchecked(self.vec.as_slice()) } }
 
-    fn chars(&self) -> Chars<'_> {
-        self.as_str().chars()
-    }
+    fn chars(&self) -> Chars<'_> { self.as_str().chars() }
 
-    fn char_count(&self) -> usize {
-        self.char_count
-    }
+    fn char_count(&self) -> usize { self.char_count }
 
     fn clear(&mut self) {
         self.char_count = 0;
         self.vec.clear();
     }
 
-    fn len(&self) -> usize {
-        self.vec.len()
-    }
+    fn len(&self) -> usize { self.vec.len() }
 
-    fn as_u8_slice(&self) -> &[u8] {
-        self.vec.as_slice()
-    }
+    fn as_u8_slice(&self) -> &[u8] { self.vec.as_slice() }
 
-    fn capacity(&self) -> usize {
-        N
-    }
+    fn capacity(&self) -> usize { N }
 
     fn add_str(&mut self, s: &str) {
         for c in s.chars() {
@@ -420,16 +386,12 @@ impl AddAssign<&str> for dyn IString {
 
 impl<const N: usize> Index<usize> for FixedString<N> {
     type Output = u8;
-    fn index(&self, index: usize) -> &Self::Output {
-        self.vec.get(index as usize)
-    }
+    fn index(&self, index: usize) -> &Self::Output { self.vec.get(index) }
 }
 
 impl<const N: usize> Index<core::ops::Range<usize>> for FixedString<N> {
     type Output = str;
-    fn index(&self, index: core::ops::Range<usize>) -> &Self::Output {
-        unsafe { core::str::from_utf8_unchecked(&self.vec.as_slice()[index.start..index.end]) }
-    }
+    fn index(&self, index: core::ops::Range<usize>) -> &Self::Output { unsafe { core::str::from_utf8_unchecked(&self.vec.as_slice()[index.start..index.end]) } }
 }
 
 fn is_digit(ch: char) -> bool {
@@ -437,9 +399,7 @@ fn is_digit(ch: char) -> bool {
     c >= '0' as usize && c <= '9' as usize
 }
 
-fn digit_to_num(ch: char) -> i32 {
-    ch as i32 - '0' as i32
-}
+fn digit_to_num(ch: char) -> i32 { ch as i32 - '0' as i32 }
 
 pub fn parse_decimal(s: &str) -> Result<f64, ()> {
     let mut sign = 1.0;
